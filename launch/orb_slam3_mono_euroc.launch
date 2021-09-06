@@ -8,6 +8,7 @@
         <param name="settings_file" type="string"   value="$(find orb_slam3_ros_wrapper)/config/EuRoC_mono_inertial_rectified.yaml" />
 
         <!-- Parameters for ROS -->
+        <param name="enable_pangolin"   type="bool"     value="false" />
         <param name="map_frame_id"  type="string"   value="world" />
         <param name="pose_frame_id" type="string"   value="camera" />
     </node>

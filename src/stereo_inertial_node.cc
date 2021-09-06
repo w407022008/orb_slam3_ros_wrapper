@@ -71,8 +71,11 @@ int main(int argc, char **argv)
     node_handler.param<bool>(node_name + "/do_equalize", bEqual, false);
     node_handler.param<bool>(node_name + "/do_rectify", do_rectify, false);
 
+    bool bUseViewer = false;
+    node_handler.param<bool>(node_name + "/use_viewer", bUseViewer, false);
+    
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::IMU_STEREO, true);
+    ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::IMU_STEREO, bUseViewer);
 
     ImuGrabber imugb;
     ImageGrabber igb(&SLAM, &imugb, do_rectify, bEqual);

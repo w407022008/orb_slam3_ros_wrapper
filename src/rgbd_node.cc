@@ -44,8 +44,11 @@ int main(int argc, char **argv)
     node_handler.param<std::string>(node_name + "/map_frame_id", map_frame_id, "map");
     node_handler.param<std::string>(node_name + "/pose_frame_id", pose_frame_id, "pose");
 
+    bool bUseViewer = false;
+    node_handler.param<bool>(node_name + "/use_viewer", bUseViewer, false);
+    
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::RGBD, true);
+    ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::RGBD, bUseViewer);
 
     ImageGrabber igb(&SLAM);
 
