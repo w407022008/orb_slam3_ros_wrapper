@@ -6,7 +6,7 @@
         <remap from="/imu"                      to="/imu0"/>
 
         <!-- Parameters for original ORB-SLAM3 -->
-        <param name="voc_file"      type="string"   value="$(find orb_slam3_ros_wrapper)/config/ORBvoc.txt" />
+        <param name="voc_file"      type="string"   value="$(find orb_slam3_ros_wrapper)/config/ORBvoc.bin" />
         <param name="settings_file" type="string"   value="$(find orb_slam3_ros_wrapper)/config/EuRoC_mono_inertial_rectified.yaml" />
         <param name="do_equalize"   type="bool"     value="false" />
 

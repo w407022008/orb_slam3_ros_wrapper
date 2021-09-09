@@ -5,7 +5,10 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
+        - /TF1
         - /TF1/Frames1
+        - /Imu1
+        - /Imu1/Status1
       Splitter Ratio: 0.5584045648574829
     Tree Height: 422
   - Class: rviz/Selection
@@ -54,7 +57,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/Image
       Enabled: true
-      Image Topic: /cam0/image_raw
+      Image Topic: /camera/color/image_raw
       Max Value: 1
       Median window: 5
       Min Value: 0
@@ -104,10 +107,38 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        camera:
+        camera_accel_frame:
+          Value: false
+        camera_accel_optical_frame:
+          Value: false
+        camera_aligned_depth_to_color_frame:
+          Value: false
+        camera_aligned_depth_to_infra1_frame:
+          Value: false
+        camera_color_frame:
+          Value: false
+        camera_color_optical_frame:
+          Value: false
+        camera_depth_frame:
+          Value: false
+        camera_depth_optical_frame:
+          Value: false
+        camera_gyro_frame:
+          Value: false
+        camera_imu_optical_frame:
+          Value: true
+        camera_infra1_frame:
+          Value: false
+        camera_infra1_optical_frame:
+          Value: false
+        camera_infra2_frame:
+          Value: false
+        camera_infra2_optical_frame:
+          Value: false
+        camera_link:
           Value: true
         world:
-          Value: true
+          Value: false
       Marker Scale: 1
       Name: TF
       Show Arrows: true
@@ -115,8 +146,29 @@ Visualization Manager:
       Show Names: true
       Tree:
         world:
-          camera:
-            {}
+          camera_link:
+            camera_accel_frame:
+              camera_accel_optical_frame:
+                {}
+            camera_aligned_depth_to_color_frame:
+              camera_color_optical_frame:
+                {}
+            camera_aligned_depth_to_infra1_frame:
+              camera_infra1_optical_frame:
+                {}
+            camera_color_frame:
+              {}
+            camera_depth_frame:
+              camera_depth_optical_frame:
+                {}
+            camera_gyro_frame:
+              camera_imu_optical_frame:
+                {}
+            camera_infra1_frame:
+              {}
+            camera_infra2_frame:
+              camera_infra2_optical_frame:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -131,7 +183,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -148,6 +200,15 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
+      Value: false
+    - Alpha: 0.10000000149011612
+      Class: rviz_plugin_tutorials/Imu
+      Color: 204; 51; 204
+      Enabled: true
+      History Length: 1
+      Name: Imu
+      Topic: /camera/imu
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
@@ -177,25 +238,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 17.20530128479004
+      Distance: 3.3738772869110107
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.8706720471382141
-        Y: -2.9490954875946045
-        Z: 4.133946418762207
+        X: -0.10801740735769272
+        Y: -0.10234072059392929
+        Z: -0.16674111783504486
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.33479735255241394
+      Pitch: 0.9747967720031738
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.306999444961548
+      Yaw: 2.4620072841644287
     Saved: ~
 Window Geometry:
   Displays:
