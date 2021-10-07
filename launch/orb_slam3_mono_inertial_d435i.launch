@@ -1,8 +1,11 @@
 <launch>
+    <!-- republish topic from compressed image -->
+    <node name="republish_color" type="republish" pkg="image_transport" args="compressed in:=/camera/color/image_raw raw out:=/color" />
+		
     <!-- ORB-SLAM3 -->
     <node name="orb_slam3_mono_inertial" pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_mono_inertial" output="screen">
         <!-- for EuRoC dataset -->
-        <remap from="/camera/image_raw"         to="/camera/color/image_raw"/>
+        <remap from="/camera/image_raw"         to="/color"/>
         <remap from="/imu"                      to="/camera/imu"/>
 
         <!-- Parameters for original ORB-SLAM3 -->

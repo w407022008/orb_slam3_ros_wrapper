@@ -1,8 +1,12 @@
 <launch>
+    <!-- republish topic from compressed image -->
+    <node name="republish_color" type="republish" pkg="image_transport" args="compressed in:=/camera/color/image_raw raw out:=/color" />
+    <node name="republish_depth" type="republish" pkg="image_transport" args="compressed in:=/camera/aligned_depth_to_color/image_raw raw out:=/aligned_depth" />
+		
     <node name="orb_slam3_rbgd" pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_rgbd" output="screen">
         <!-- for Realsense D435i -->
-        <remap from="/camera/rgb/image_raw"                 to="/camera/color/image_raw"/>
-        <remap from="/camera/depth_registered/image_raw"    to="/camera/aligned_depth_to_color/image_raw"/>
+        <remap from="/camera/rgb/image_raw"                 to="/color"/>
+        <remap from="/camera/depth_registered/image_raw"    to="/aligned_depth"/>
 
         <!-- Parameters for original ORB-SLAM3 -->
         <param name="voc_file"      type="string"   value="$(find orb_slam3_ros_wrapper)/config/ORBvoc.bin" />

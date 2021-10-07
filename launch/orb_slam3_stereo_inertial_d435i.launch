@@ -1,9 +1,13 @@
 <launch>
+    <!-- republish topic from compressed image -->
+    <node name="republish_infra1" type="republish" pkg="image_transport" args="compressed in:=/camera/infra1/image_rect_raw raw out:=/infra1" />
+    <node name="republish_infra2" type="republish" pkg="image_transport" args="compressed in:=/camera/infra2/image_rect_raw raw out:=/infra2" />
+		
     <!-- ORB-SLAM3 -->
     <node name="orb_slam3_stereo_inertial" pkg="orb_slam3_ros_wrapper" type="orb_slam3_ros_wrapper_stereo_inertial" output="screen">
         <!-- for Realsense D435i -->
-        <remap from="/camera/left/image_raw"    to="/camera/infra1/image_rect_raw"/>
-        <remap from="/camera/right/image_raw"   to="/camera/infra2/image_rect_raw"/>
+        <remap from="/camera/left/image_raw"    to="/infra1"/>
+        <remap from="/camera/right/image_raw"   to="/infra2"/>
         <remap from="/imu"                      to="/camera/imu"/>
 
         <!-- Parameters for original ORB-SLAM3 -->
