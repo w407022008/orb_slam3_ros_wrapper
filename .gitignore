@@ -1,2 +1,6 @@
 .vscode
 config/ORBvoc.txt
+.launch~
+.cpp~
+.h~
+.c~
