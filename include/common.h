@@ -37,7 +37,7 @@ extern std::string map_frame_id, pose_frame_id;
 void setup_ros_publishers(ros::NodeHandle &node_handler, image_transport::ImageTransport &image_transport);
 void setup_tf_orb_to_ros(ORB_SLAM3::System::eSensor);
 
-bool publish_tf_transform;
+bool whether_publish_tf_transform;
 
 void publish_ros_pose_tf(cv::Mat, ros::Time, ORB_SLAM3::System::eSensor);
 void publish_tf_transform(tf::Transform, ros::Time);
