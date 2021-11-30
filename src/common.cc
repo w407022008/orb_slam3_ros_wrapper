@@ -33,7 +33,7 @@ void publish_ros_pose_tf(cv::Mat Tcw, ros::Time current_frame_time, ORB_SLAM3::S
     {
         tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
 
-        publish_tf_transform(tf_transform, current_frame_time);
+        if(publish_tf_transform) publish_tf_transform(tf_transform, current_frame_time);
 
         publish_pose_stamped(tf_transform, current_frame_time);
     }
