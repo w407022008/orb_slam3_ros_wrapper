@@ -25,7 +25,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud2
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -129,8 +129,6 @@ Visualization Manager:
           Value: false
         camera_link:
           Value: true
-        custom_link:
-          Value: false
         laser_down:
           Value: false
         map:
@@ -171,14 +169,6 @@ Visualization Manager:
                   {}
             laser_down:
               {}
-          custom_link:
-            {}
-          map:
-            map_ned:
-              {}
-          odom:
-            odom_ned:
-              {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -188,12 +178,12 @@ Visualization Manager:
         Min Value: -10
         Value: true
       Axis: Z
-      Channel Name: intensity
+      Channel Name: z
       Class: rviz/PointCloud2
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Min Color: 0; 0; 0
@@ -202,13 +192,13 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.029999999329447746
-      Style: Points
-      Topic: /orb_slam3_ros/map_points
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /prometheus/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 0.10000000149011612
       Class: rviz_plugin_tutorials/Imu
       Color: 204; 51; 204
@@ -246,7 +236,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.022292971611023
+      Distance: 7.019105434417725
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -261,10 +251,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9697967767715454
+      Pitch: 1.0197961330413818
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.4570071697235107
+      Yaw: 2.347020387649536
     Saved: ~
 Window Geometry:
   Displays:
