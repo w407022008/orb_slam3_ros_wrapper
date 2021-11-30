@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     bool bUseViewer = false;
     node_handler.param<bool>(node_name + "/use_viewer", bUseViewer, false);
     
-    node_handler.param<bool>(node_name + "/publish_tf_transform", publish_tf_transform, false);
+    node_handler.param<bool>(node_name + "/publish_tf_transform", whether_publish_tf_transform, false);
     
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::RGBD, bUseViewer);

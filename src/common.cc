@@ -12,6 +12,8 @@ image_transport::Publisher rendered_image_pub;
 
 std::string map_frame_id, pose_frame_id;
 
+bool whether_publish_tf_transform;
+
 // Coordinate transformation matrix from orb coordinate system to ros coordinate systemm
 tf::Matrix3x3 tf_orb_to_ros(1, 0, 0,
                             0, 1, 0,
