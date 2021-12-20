@@ -25,7 +25,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: PointCloud2
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -79,7 +79,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 25; 255; 0
-      Enabled: true
+      Enabled: false
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
@@ -97,7 +97,7 @@ Visualization Manager:
       Shaft Length: 0.10000000149011612
       Topic: /hector_trajectory_server/trajectory
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
@@ -106,7 +106,7 @@ Visualization Manager:
         base_link:
           Value: true
         base_link_frd:
-          Value: true
+          Value: false
         camera_accel_frame:
           Value: false
         camera_accel_optical_frame:
@@ -145,7 +145,7 @@ Visualization Manager:
       Name: TF
       Show Arrows: false
       Show Axes: true
-      Show Names: true
+      Show Names: false
       Tree:
         world:
           base_link:
@@ -168,6 +168,12 @@ Visualization Manager:
                 camera_infra2_optical_frame:
                   {}
             laser_down:
+              {}
+          map:
+            map_ned:
+              {}
+          odom:
+            odom_ned:
               {}
       Update Interval: 0
       Value: true
@@ -208,6 +214,21 @@ Visualization Manager:
       Topic: /camera/imu
       Unreliable: false
       Value: false
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /orb_slam3_ros/camera
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 46; 52; 54
@@ -236,25 +257,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.019105434417725
+      Distance: 2.0307366847991943
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.10801740735769272
-        Y: -0.10234072059392929
-        Z: -0.16674111783504486
+        X: 0.20620936155319214
+        Y: -0.10722844302654266
+        Z: -0.43952566385269165
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0197961330413818
+      Pitch: 1.4297966957092285
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.347020387649536
+      Yaw: 1.772015929222107
     Saved: ~
 Window Geometry:
   Displays:
