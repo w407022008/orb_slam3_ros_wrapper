@@ -12,8 +12,6 @@ image_transport::Publisher rendered_image_pub;
 
 std::string map_frame_id, pose_frame_id;
 
-bool whether_publish_tf_transform;
-
 // Coordinate transformation matrix from orb coordinate system to ros coordinate systemm
 tf::Matrix3x3 tf_orb_to_ros(1, 0, 0,
                             0, 1, 0,
@@ -29,34 +27,11 @@ void setup_ros_publishers(ros::NodeHandle &node_handler, image_transport::ImageT
     rendered_image_pub = image_transport.advertise("orb_slam3_ros/tracking_image", 1);
 }
 
-void publish_ros_pose_tf(cv::Mat Tcw, ros::Time current_frame_time, ORB_SLAM3::System::eSensor sensor_type)
-{
-    if (!Tcw.empty())
-    {
-        tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
-
-        if(whether_publish_tf_transform) publish_tf_transform(tf_transform, current_frame_time);
-
-        publish_pose_stamped(tf_transform, current_frame_time);
-    }
-}
-
 void publish_tf_transform(tf::Transform tf_transform, ros::Time current_frame_time)
 {
     static tf::TransformBroadcaster tf_broadcaster;
 
     tf_broadcaster.sendTransform(tf::StampedTransform(tf_transform, current_frame_time, map_frame_id, pose_frame_id));
-}
-
-void publish_pose_stamped(tf::Transform tf_transform, ros::Time current_frame_time)
-{
-    tf::Stamped<tf::Pose> grasp_tf_pose(tf_transform, current_frame_time, map_frame_id);
-
-    geometry_msgs::PoseStamped pose_msg;
-
-    tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
-
-    pose_pub.publish(pose_msg);
 }
 
 void publish_ros_tracking_img(cv::Mat image, ros::Time current_frame_time)

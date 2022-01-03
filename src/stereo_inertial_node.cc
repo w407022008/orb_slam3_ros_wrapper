@@ -8,6 +8,15 @@
 
 using namespace std;
 
+bool whether_publish_tf_transform;
+bool interpolation = false;
+float interpolation_delay = 0.2;
+int interpolation_sample_num = 4;
+int interpolation_order = 2;
+
+bool updated = false;
+ros::Time time_ref(0.0);
+
 class ImuGrabber
 {
 public:
@@ -27,6 +36,7 @@ public:
     void GrabImageRight(const sensor_msgs::ImageConstPtr& msg);
     cv::Mat GetImage(const sensor_msgs::ImageConstPtr &img_msg);
     void SyncWithImu();
+    void publish();
 
     queue<sensor_msgs::ImageConstPtr> imgLeftBuf, imgRightBuf;
     std::mutex mBufMutexLeft,mBufMutexRight;
@@ -39,6 +49,8 @@ public:
 
     const bool mbClahe;
     cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+
+    std::deque<geometry_msgs::PoseStamped> pose_msgs;
 };
 
 int main(int argc, char **argv)
@@ -76,7 +88,12 @@ int main(int argc, char **argv)
     
     node_handler.param<bool>(node_name + "/publish_tf_transform", whether_publish_tf_transform, true);
     
-    // Create SLAM system. It initializes all system threads and gets ready to process frames.
+    // interpolation
+    node_handler.param<bool>(node_name + "/interpolation", interpolation, false);
+    node_handler.param<float>(node_name + "/interpolation_delay", interpolation_delay, 0.2);
+    node_handler.param<int>(node_name + "/interpolation_order", interpolation_order, 2);
+    node_handler.param<int>(node_name + "/interpolation_sample_num", interpolation_sample_num, 4);
+
     ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::IMU_STEREO, bUseViewer);
 
     ImuGrabber imugb;
@@ -131,7 +148,9 @@ int main(int argc, char **argv)
 
     setup_tf_orb_to_ros(ORB_SLAM3::System::IMU_STEREO);
 
-    std::thread sync_thread(&ImageGrabber::SyncWithImu, &igb);
+    std::thread sync_thread(&ImageGrabber::SyncWithImu, &igb); 
+
+    // std::thread sync_thread_pub(&ImageGrabber::publish, &igb); 
 
     ros::spin();
 
@@ -258,13 +277,123 @@ void ImageGrabber::SyncWithImu()
         // Main algorithm runs here
         cv::Mat Tcw = mpSLAM->TrackStereo(imLeft,imRight,tImLeft,vImuMeas);
 
-        publish_ros_pose_tf(Tcw, current_frame_time, ORB_SLAM3::System::IMU_STEREO);
+        if (!Tcw.empty())
+        {
+            tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
+
+            if(whether_publish_tf_transform) publish_tf_transform(tf_transform, current_frame_time);
+
+            tf::Stamped<tf::Pose> grasp_tf_pose(tf_transform, current_frame_time, map_frame_id);
+
+            geometry_msgs::PoseStamped pose_msg;
+
+            tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
+            
+            // pose_msgs.push_back(pose_msg);
+            pose_pub.publish(pose_msg);
+            updated = true;
+        }
 
         publish_ros_tracking_mappoints(mpSLAM->GetTrackedMapPoints(), current_frame_time);
 
         std::chrono::milliseconds tSleep(1);
         std::this_thread::sleep_for(tSleep);
         }
+    }
+}
+
+void ImageGrabber::publish()
+{
+    while(1)
+    {
+        if( true)
+        {
+            if(!pose_msgs.empty())
+            {
+                geometry_msgs::PoseStamped vision = pose_msgs.front();
+                pose_msgs.pop_front();
+                pose_pub.publish(vision);
+            }
+        }
+        else
+        {
+            while(pose_msgs.size() > interpolation_sample_num)
+            {
+                pose_msgs.pop_front();
+            }
+            if(pose_msgs.size() == interpolation_sample_num)
+            {
+                static Eigen::MatrixXf A(interpolation_sample_num,interpolation_order+1);
+                static Eigen::MatrixXf b(interpolation_sample_num,7);
+                static Eigen::MatrixXf X(interpolation_order+1,7);
+                static ros::Time time_stamp_header;
+
+                if(time_ref.toSec() == 0.0 || updated)
+                {
+                    // Fitting
+                    time_ref = pose_msgs.front().header.stamp;
+                    std::deque<geometry_msgs::PoseStamped>::iterator it = pose_msgs.begin();
+                    int idx=0;
+                    while(it != pose_msgs.end()){
+                        float t = (it->header.stamp-time_ref).toSec();
+
+                        A(idx,0) = 1;
+                        for(int i=1;i<=interpolation_order;i++)
+                        {
+                            A(idx,i) = t*A(idx,i-1);
+                        }
+                        b(idx,0) = it->pose.position.x;
+                        b(idx,1) = it->pose.position.y;
+                        b(idx,2) = it->pose.position.z;
+                        b(idx,3) = it->pose.orientation.x;
+                        b(idx,4) = it->pose.orientation.y;
+                        b(idx,5) = it->pose.orientation.z;
+                        b(idx,6) = it->pose.orientation.w;
+                        it++;
+                        idx++;
+                    }
+                    X = (A.transpose() * A).llt().solve(A.transpose() * b);
+                }
+
+                time_stamp_header = ros::Time::now() - ros::Duration(interpolation_delay);
+
+                if(pose_msgs.back().header.stamp >= time_stamp_header){
+                    // Interpolation
+                    geometry_msgs::PoseStamped vision;
+                    vision.header.stamp = time_stamp_header + ros::Duration(interpolation_delay);// default delay
+                    vision.header.frame_id = "/world";
+                    float t = (time_stamp_header-time_ref).toSec();
+
+                    Eigen::VectorXf T(interpolation_order+1);
+                    T(0) = 1;
+                    for(int i=1;i<=interpolation_order;i++)
+                    {
+                        T(i) = t*T(i-1);
+                    }
+            
+                    // Publish
+                    Eigen::VectorXf state(7);
+                    state = X.transpose()*T;
+
+                    vision.pose.position.x = state[0];
+                    vision.pose.position.y = state[1];
+                    vision.pose.position.z = state[2];
+
+                    Eigen::Quaternion<double> q = {state[6],state[3],state[4],state[5]};
+                    q.normalize();
+                    vision.pose.orientation.x = q.x();
+                    vision.pose.orientation.y = q.y();
+                    vision.pose.orientation.z = q.z();
+                    vision.pose.orientation.w = q.w();
+                    
+                    pose_pub.publish(vision);
+                }
+                updated = false;
+            }
+        }
+        
+        std::chrono::milliseconds tSleep(20);
+        std::this_thread::sleep_for(tSleep);
     }
 }
 

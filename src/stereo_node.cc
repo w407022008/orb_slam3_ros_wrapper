@@ -8,6 +8,8 @@
 
 using namespace std;
 
+bool whether_publish_tf_transform;
+
 class ImageGrabber
 {
 public:
@@ -18,6 +20,8 @@ public:
     ORB_SLAM3::System* mpSLAM;
     bool do_rectify;
     cv::Mat M1l,M2l,M1r,M2r;
+
+    std::deque<geometry_msgs::PoseStamped> pose_msgs;
 };
 
 int main(int argc, char **argv)
@@ -161,7 +165,21 @@ void ImageGrabber::GrabStereo(const sensor_msgs::ImageConstPtr& msgLeft,const se
 
     ros::Time current_frame_time = cv_ptrLeft->header.stamp;
 
-    publish_ros_pose_tf(Tcw, current_frame_time, ORB_SLAM3::System::STEREO);
+    if (!Tcw.empty())
+    {
+        tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
+
+        if(whether_publish_tf_transform) publish_tf_transform(tf_transform, current_frame_time);
+
+        tf::Stamped<tf::Pose> grasp_tf_pose(tf_transform, current_frame_time, map_frame_id);
+
+        geometry_msgs::PoseStamped pose_msg;
+
+        tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
+        
+        // pose_msgs.push_back(pose_msg);
+        pose_pub.publish(pose_msg);
+    }
 
     publish_ros_tracking_mappoints(mpSLAM->GetTrackedMapPoints(), current_frame_time);
 

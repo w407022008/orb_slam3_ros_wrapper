@@ -8,6 +8,8 @@
 
 using namespace std;
 
+bool whether_publish_tf_transform;
+
 class ImuGrabber
 {
 public:
@@ -35,6 +37,8 @@ public:
 
     const bool mbClahe;
     cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(8, 8));
+
+    std::deque<geometry_msgs::PoseStamped> pose_msgs;
 };
 
 
@@ -174,7 +178,21 @@ void ImageGrabber::SyncWithImu()
             // Main algorithm runs here
             cv::Mat Tcw = mpSLAM->TrackMonocular(im, tIm, vImuMeas);
 
-            publish_ros_pose_tf(Tcw, current_frame_time, ORB_SLAM3::System::IMU_MONOCULAR);
+            if (!Tcw.empty())
+            {
+                tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
+
+                if(whether_publish_tf_transform) publish_tf_transform(tf_transform, current_frame_time);
+
+                tf::Stamped<tf::Pose> grasp_tf_pose(tf_transform, current_frame_time, map_frame_id);
+
+                geometry_msgs::PoseStamped pose_msg;
+
+                tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
+                
+                // pose_msgs.push_back(pose_msg);
+                pose_pub.publish(pose_msg);
+            }
 
             publish_ros_tracking_mappoints(mpSLAM->GetTrackedMapPoints(), current_frame_time);
 
