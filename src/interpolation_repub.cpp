@@ -6,7 +6,7 @@
 #include <geometry_msgs/PoseStamped.h>
 
 using namespace std;
-#define DEBUG false
+#define DEBUG true
 //---------------------------------------外部参数-----------------------------------------------
 float rate_hz;
 bool d435i_with_imu;
@@ -60,28 +60,28 @@ void orb_slam3_cb(const geometry_msgs::PoseStamped::ConstPtr &msg)
     
 		pose.header.stamp = msg->header.stamp;
 		
-		ros::Time time_now = ros::Time::now();
+//		ros::Time time_now = ros::Time::now();
 		
 		updated = true;
-if(DEBUG) cout << "delta time sub: " << (time_now-msg->header.stamp).toSec() << endl;
+//if(DEBUG) cout << "delta time sub: " << (time_now-msg->header.stamp).toSec() << endl;
     }
 }
 
 //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>主 函 数<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "px4_pos_estimator");
+    ros::init(argc, argv, "orb_slam3_ros_wrapper_interpolation_repub");
     ros::NodeHandle nh("~");
 
-    nh.param<bool>("d435i_with_imu", d435i_with_imu, false);
+    nh.param<bool>("d435i_with_imu", d435i_with_imu, true);
     //　程序执行频率
-    nh.param<float>("rate_hz", rate_hz, 20);
+    nh.param<float>("rate_hz", rate_hz, 50);
 
     // interpolation
-    nh.param<bool>("interpolation", interpolation, false);
-    nh.param<float>("interpolation_delay", interpolation_delay, 0.1);
-    nh.param<int>("interpolation_order", interpolation_order, 3);
-    nh.param<int>("interpolation_sample_num", interpolation_sample_num, 10);
+    nh.param<bool>("interpolation", interpolation, true);
+    nh.param<float>("interpolation_delay", interpolation_delay, 0.2);
+    nh.param<int>("interpolation_order", interpolation_order, 2);
+    nh.param<int>("interpolation_sample_num", interpolation_sample_num, 4);
 
     // 【订阅】ORB-SLAM3估计位姿
     orb_slam3_sub = nh.subscribe<geometry_msgs::PoseStamped>("/orb_slam3_ros/camera", 100, orb_slam3_cb);
@@ -190,7 +190,7 @@ cout << endl;
 		    vision.pose.orientation.y = q.y();
 		    vision.pose.orientation.z = q.z();
 		    vision.pose.orientation.w = q.w();
-		    
+      
     		vision_pub.publish(vision);
 	    }
     }else if(updated){

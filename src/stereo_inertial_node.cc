@@ -5,8 +5,11 @@
 */
 
 #include "common.h"
+#include <deque>
+#include <Eigen/Dense>
 
 using namespace std;
+using namespace Eigen;
 
 bool whether_publish_tf_transform;
 bool interpolation = false;
@@ -14,8 +17,12 @@ float interpolation_delay = 0.2;
 int interpolation_sample_num = 4;
 int interpolation_order = 2;
 
+Eigen::MatrixXf A(interpolation_sample_num,interpolation_order+1);
+Eigen::MatrixXf b(interpolation_sample_num,7);
+Eigen::MatrixXf X(interpolation_order+1,7);
+
 bool updated = false;
-ros::Time time_ref(0.0);
+ros::Time time_ref;
 
 class ImuGrabber
 {
@@ -51,6 +58,9 @@ public:
     cv::Ptr<cv::CLAHE> mClahe = cv::createCLAHE(3.0, cv::Size(8, 8));
 
     std::deque<geometry_msgs::PoseStamped> pose_msgs;
+    std::mutex mBufMutexPose;
+
+    ros::Time time_stamp_header;
 };
 
 int main(int argc, char **argv)
@@ -93,6 +103,13 @@ int main(int argc, char **argv)
     node_handler.param<float>(node_name + "/interpolation_delay", interpolation_delay, 0.2);
     node_handler.param<int>(node_name + "/interpolation_order", interpolation_order, 2);
     node_handler.param<int>(node_name + "/interpolation_sample_num", interpolation_sample_num, 4);
+
+    A.resize(interpolation_sample_num,interpolation_order+1);
+    b.resize(interpolation_sample_num,7);
+    X.resize(interpolation_order+1,7);
+    A.setZero();
+    b.setZero();
+    X.setZero();
 
     ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::IMU_STEREO, bUseViewer);
 
@@ -281,7 +298,11 @@ void ImageGrabber::SyncWithImu()
         {
             tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
 
-            if(whether_publish_tf_transform) publish_tf_transform(tf_transform, current_frame_time);
+            if(whether_publish_tf_transform) 
+            {
+                static tf::TransformBroadcaster tf_broadcaster;
+                tf_broadcaster.sendTransform(tf::StampedTransform(tf_transform, current_frame_time, map_frame_id, pose_frame_id));
+            }
 
             tf::Stamped<tf::Pose> grasp_tf_pose(tf_transform, current_frame_time, map_frame_id);
 
@@ -289,9 +310,12 @@ void ImageGrabber::SyncWithImu()
 
             tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
             
-            // pose_msgs.push_back(pose_msg);
+            this->mBufMutexPose.lock();
+            pose_msgs.push_back(pose_msg);
             pose_pub.publish(pose_msg);
             updated = true;
+            this->mBufMutexPose.unlock();
+            // pose_pub.publish(pose_msg);
         }
 
         publish_ros_tracking_mappoints(mpSLAM->GetTrackedMapPoints(), current_frame_time);
@@ -306,12 +330,13 @@ void ImageGrabber::publish()
 {
     while(1)
     {
-        if( true)
+        mBufMutexPose.lock();
+        if(true)
         {
             if(!pose_msgs.empty())
             {
-                geometry_msgs::PoseStamped vision = pose_msgs.front();
-                pose_msgs.pop_front();
+                geometry_msgs::PoseStamped vision = pose_msgs.back();
+                pose_msgs.clear();
                 pose_pub.publish(vision);
             }
         }
@@ -321,14 +346,10 @@ void ImageGrabber::publish()
             {
                 pose_msgs.pop_front();
             }
+
             if(pose_msgs.size() == interpolation_sample_num)
             {
-                static Eigen::MatrixXf A(interpolation_sample_num,interpolation_order+1);
-                static Eigen::MatrixXf b(interpolation_sample_num,7);
-                static Eigen::MatrixXf X(interpolation_order+1,7);
-                static ros::Time time_stamp_header;
-
-                if(time_ref.toSec() == 0.0 || updated)
+                if(updated)
                 {
                     // Fitting
                     time_ref = pose_msgs.front().header.stamp;
@@ -352,12 +373,27 @@ void ImageGrabber::publish()
                         it++;
                         idx++;
                     }
-                    X = (A.transpose() * A).llt().solve(A.transpose() * b);
+//                        Matrix3f B;
+//    B << 1, 2, 1,
+//         2, 1, 0,
+//         -1, 1, 2;
+//    cout << "Here is the matrix B:\n" << B << endl;
+//    cout << "The determinant of A is " << B.determinant() << endl;
+//    cout << "The inverse of B is:\n" << B.inverse() << endl;
+                    // cout << A.transpose() * A << endl;
+                    // cout << endl;
+                    // cout << A.transpose() * b << endl;
+                    // auto inv  = (A.transpose() * A).inverse();
+                    // X = (A.transpose() * A).llt().solve(A.transpose() * b);
+                    // cout << endl;
+                    // auto res = A.transpose() * A;
+
+                    // cout << (A.transpose() * A).determinant() << endl;
                 }
 
                 time_stamp_header = ros::Time::now() - ros::Duration(interpolation_delay);
 
-                if(pose_msgs.back().header.stamp >= time_stamp_header){
+                if(pose_msgs.back().header.stamp >= time_stamp_header && false){
                     // Interpolation
                     geometry_msgs::PoseStamped vision;
                     vision.header.stamp = time_stamp_header + ros::Duration(interpolation_delay);// default delay
@@ -391,8 +427,8 @@ void ImageGrabber::publish()
                 updated = false;
             }
         }
-        
-        std::chrono::milliseconds tSleep(20);
+        mBufMutexPose.unlock();
+        std::chrono::milliseconds tSleep(10);
         std::this_thread::sleep_for(tSleep);
     }
 }
