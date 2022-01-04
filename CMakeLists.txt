@@ -99,3 +99,12 @@ add_executable (${PROJECT_NAME}_rgbd
 target_link_libraries(${PROJECT_NAME}_rgbd
    ${LIBS}
 )
+
+# interpolation_repub node
+add_executable (${PROJECT_NAME}_interpolation_repub
+   src/interpolation_repub.cpp
+)
+target_link_libraries(${PROJECT_NAME}_interpolation_repub
+   ${LIBS}
+)
+
