@@ -8,6 +8,8 @@
 #include <deque>
 #include <Eigen/Dense>
 
+#define DEBUG false
+
 using namespace std;
 using namespace Eigen;
 
@@ -99,7 +101,7 @@ int main(int argc, char **argv)
     node_handler.param<bool>(node_name + "/publish_tf_transform", whether_publish_tf_transform, true);
     
     // interpolation
-    node_handler.param<bool>(node_name + "/interpolation", interpolation, false);
+    node_handler.param<bool>(node_name + "/interpolation", interpolation, true);
     node_handler.param<float>(node_name + "/interpolation_delay", interpolation_delay, 0.2);
     node_handler.param<int>(node_name + "/interpolation_order", interpolation_order, 2);
     node_handler.param<int>(node_name + "/interpolation_sample_num", interpolation_sample_num, 4);
@@ -167,7 +169,7 @@ int main(int argc, char **argv)
 
     std::thread sync_thread(&ImageGrabber::SyncWithImu, &igb); 
 
-    // std::thread sync_thread_pub(&ImageGrabber::publish, &igb); 
+    std::thread sync_thread_pub(&ImageGrabber::publish, &igb); 
 
     ros::spin();
 
@@ -309,10 +311,9 @@ void ImageGrabber::SyncWithImu()
             geometry_msgs::PoseStamped pose_msg;
 
             tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
-            
+
             this->mBufMutexPose.lock();
             pose_msgs.push_back(pose_msg);
-            pose_pub.publish(pose_msg);
             updated = true;
             this->mBufMutexPose.unlock();
             // pose_pub.publish(pose_msg);
@@ -331,7 +332,7 @@ void ImageGrabber::publish()
     while(1)
     {
         mBufMutexPose.lock();
-        if(true)
+        if(!interpolation)
         {
             if(!pose_msgs.empty())
             {
@@ -373,31 +374,20 @@ void ImageGrabber::publish()
                         it++;
                         idx++;
                     }
-//                        Matrix3f B;
-//    B << 1, 2, 1,
-//         2, 1, 0,
-//         -1, 1, 2;
-//    cout << "Here is the matrix B:\n" << B << endl;
-//    cout << "The determinant of A is " << B.determinant() << endl;
-//    cout << "The inverse of B is:\n" << B.inverse() << endl;
-                    // cout << A.transpose() * A << endl;
-                    // cout << endl;
-                    // cout << A.transpose() * b << endl;
-                    // auto inv  = (A.transpose() * A).inverse();
-                    // X = (A.transpose() * A).llt().solve(A.transpose() * b);
-                    // cout << endl;
-                    // auto res = A.transpose() * A;
-
-                    // cout << (A.transpose() * A).determinant() << endl;
+                    auto res = A.transpose() * A;
+                    auto val = A.transpose() * b;
+                    auto  inv = res.inverse();
+                    X = res.llt().solve(val);
                 }
 
                 time_stamp_header = ros::Time::now() - ros::Duration(interpolation_delay);
 
-                if(pose_msgs.back().header.stamp >= time_stamp_header && false){
+                if(pose_msgs.back().header.stamp >= time_stamp_header){
+if(DEBUG)cout << "[DEB] delta time pub: " << (time_stamp_header- pose_msgs.back().header.stamp).toSec() << endl;
                     // Interpolation
                     geometry_msgs::PoseStamped vision;
-                    vision.header.stamp = time_stamp_header + ros::Duration(interpolation_delay);// default delay
-                    vision.header.frame_id = "/world";
+                    vision.header.stamp = time_stamp_header;// default delay
+                    vision.header.frame_id = map_frame_id;
                     float t = (time_stamp_header-time_ref).toSec();
 
                     Eigen::VectorXf T(interpolation_order+1);
@@ -428,7 +418,7 @@ void ImageGrabber::publish()
             }
         }
         mBufMutexPose.unlock();
-        std::chrono::milliseconds tSleep(10);
+        std::chrono::milliseconds tSleep(20);
         std::this_thread::sleep_for(tSleep);
     }
 }
