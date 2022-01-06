@@ -40,6 +40,7 @@ include_directories(
    ${ORB_SLAM3_DIR}
    ${ORB_SLAM3_DIR}/include
    ${ORB_SLAM3_DIR}/include/CameraModels
+   ${ORB_SLAM3_DIR}/Thirdparty/Sophus
    ${PROJECT_SOURCE_DIR}/include
    ${EIGEN3_INCLUDE_DIR}
    ${catkin_INCLUDE_DIRS}
