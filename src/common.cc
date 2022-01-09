@@ -6,7 +6,7 @@
 
 #include "common.h"
 
-#define DEBUG true
+#define DEBUG false
 
 ros::Publisher pose_pub;
 ros::Publisher map_points_pub;
@@ -148,7 +148,7 @@ void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped> pose_msgs, b
             }
 
             while(pose_msgs.back().header.stamp >= time_stamp_header - ros::Duration(0.005)){
-                if(DEBUG)cout << "[DEB] delta time pub: " << (time_stamp_header- pose_msgs.back().header.stamp).toSec() << endl;
+                if(DEBUG)cout << "[DEBUG] delta time pub: " << (time_stamp_header- pose_msgs.back().header.stamp).toSec() << endl;
                 // Interpolation
                 geometry_msgs::PoseStamped vision;
                 vision.header.stamp = time_stamp_header;// default delay
