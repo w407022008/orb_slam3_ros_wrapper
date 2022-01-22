@@ -38,6 +38,7 @@ extern std::string map_frame_id, pose_frame_id;
 
 extern bool interpolation;
 extern float interpolation_rate;
+extern float interpolation_delay;
 extern int interpolation_sample_num;
 extern int interpolation_order;
 

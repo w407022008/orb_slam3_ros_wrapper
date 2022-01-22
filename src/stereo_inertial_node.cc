@@ -321,7 +321,7 @@ void ImageGrabber::publish()
         mBufMutexPose.lock();
         publish_ros_poseStamped(pose_msgs, updated);
         mBufMutexPose.unlock();
-        std::chrono::milliseconds tSleep(20);
+        std::chrono::milliseconds tSleep(1);
         std::this_thread::sleep_for(tSleep);
     }
 }

@@ -19,10 +19,11 @@ tf::Matrix3x3 tf_orb_to_ros(1, 0, 0,
                             0, 1, 0,
                             0, 0, 1);
 
-bool interpolation = false;
-float interpolation_rate = 50.0;
-int interpolation_sample_num = 4;
-int interpolation_order = 2;
+bool interpolation;
+float interpolation_rate;
+float interpolation_delay;
+int interpolation_sample_num;
+int interpolation_order;
 
 ros::Time time_ref;
 ros::Time time_stamp_header;
@@ -62,13 +63,6 @@ void setup_tf_orb_to_ros(ORB_SLAM3::System::eSensor sensor_type)
     {
         tf_orb_to_ros.setIdentity();
     }
-    
-    A.resize(interpolation_sample_num,interpolation_order+1);
-    b.resize(interpolation_sample_num,7);
-    X.resize(interpolation_order+1,7);
-    A.setZero();
-    b.setZero();
-    X.setZero();
 }
 
 void setup_interpolation()
@@ -108,6 +102,7 @@ void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped> pose_msgs, b
         if(!pose_msgs.empty())
         {
             geometry_msgs::PoseStamped vision = pose_msgs.back();
+            vision.header.stamp += ros::Duration(interpolation_delay);
             pose_msgs.clear();
             pose_pub.publish(vision);
         }
@@ -151,7 +146,7 @@ void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped> pose_msgs, b
                 if(DEBUG)cout << "[DEBUG] delta time pub: " << (time_stamp_header- pose_msgs.back().header.stamp).toSec() << endl;
                 // Interpolation
                 geometry_msgs::PoseStamped vision;
-                vision.header.stamp = time_stamp_header;// default delay
+                vision.header.stamp = time_stamp_header + ros::Duration(interpolation_delay);// default delay
                 vision.header.frame_id = map_frame_id;
                 float t = (time_stamp_header-time_ref).toSec();
 

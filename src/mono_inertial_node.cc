@@ -85,6 +85,7 @@ int main(int argc, char **argv)
     node_handler.param<float>(node_name + "/interpolation_rate", interpolation_rate, 50.0);
     node_handler.param<int>(node_name + "/interpolation_order", interpolation_order, 2);
     node_handler.param<int>(node_name + "/interpolation_sample_num", interpolation_sample_num, 4);
+    node_handler.param<float>(node_name + "/interpolation_delay", interpolation_delay, 0.15);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM3::System SLAM(voc_file, settings_file, ORB_SLAM3::System::IMU_MONOCULAR, bUseViewer);
