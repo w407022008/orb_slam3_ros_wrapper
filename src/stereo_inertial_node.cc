@@ -84,6 +84,8 @@ int main(int argc, char **argv)
     
     node_handler.param<bool>(node_name + "/publish_tf_transform", whether_publish_tf_transform, true);
     
+    node_handler.param<float>(node_name + "/delay", delay, 0.15);
+    
     // interpolation
     node_handler.param<bool>(node_name + "/interpolation", interpolation, true);
     node_handler.param<float>(node_name + "/interpolation_rate", interpolation_rate, 50.0);

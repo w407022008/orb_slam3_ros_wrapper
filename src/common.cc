@@ -21,7 +21,7 @@ tf::Matrix3x3 tf_orb_to_ros(1, 0, 0,
 
 bool interpolation;
 float interpolation_rate;
-float interpolation_delay;
+float _delay;
 int interpolation_sample_num;
 int interpolation_order;
 
@@ -102,7 +102,7 @@ void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped> pose_msgs, b
         if(!pose_msgs.empty())
         {
             geometry_msgs::PoseStamped vision = pose_msgs.back();
-            vision.header.stamp += ros::Duration(interpolation_delay);
+            vision.header.stamp += ros::Duration(delay);
             pose_msgs.clear();
             pose_pub.publish(vision);
         }
@@ -146,7 +146,7 @@ void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped> pose_msgs, b
                 if(DEBUG)cout << "[DEBUG] delta time pub: " << (time_stamp_header- pose_msgs.back().header.stamp).toSec() << endl;
                 // Interpolation
                 geometry_msgs::PoseStamped vision;
-                vision.header.stamp = time_stamp_header + ros::Duration(interpolation_delay);// default delay
+                vision.header.stamp = time_stamp_header + ros::Duration(delay);// default delay
                 vision.header.frame_id = map_frame_id;
                 float t = (time_stamp_header-time_ref).toSec();
 
