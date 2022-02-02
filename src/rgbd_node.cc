@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     node_handler.param<float>(node_name + "/delay", delay, 0.15);
     
     // interpolation
-    node_handler.param<bool>(node_name + "/interpolation", interpolation, true);
+    node_handler.param<bool>(node_name + "/interpolation", interpolation, false);
     node_handler.param<float>(node_name + "/interpolation_rate", interpolation_rate, 50.0);
     node_handler.param<int>(node_name + "/interpolation_order", interpolation_order, 2);
     node_handler.param<int>(node_name + "/interpolation_sample_num", interpolation_sample_num, 4);

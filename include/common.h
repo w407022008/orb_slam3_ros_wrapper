@@ -48,7 +48,7 @@ void setup_interpolation();
 
 void publish_ros_tracking_img(cv::Mat, ros::Time);
 void publish_ros_tracking_mappoints(std::vector<ORB_SLAM3::MapPoint*>, ros::Time);
-void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped>, bool);
+void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped>, bool &);
 
 tf::Transform from_orb_to_ros_tf_transform(cv::Mat);
 sensor_msgs::PointCloud2 tracked_mappoints_to_pointcloud(std::vector<ORB_SLAM3::MapPoint*>, ros::Time);

@@ -21,7 +21,7 @@ tf::Matrix3x3 tf_orb_to_ros(1, 0, 0,
 
 bool interpolation;
 float interpolation_rate;
-float _delay;
+float delay;
 int interpolation_sample_num;
 int interpolation_order;
 
@@ -95,16 +95,18 @@ void publish_ros_tracking_mappoints(std::vector<ORB_SLAM3::MapPoint*> map_points
     map_points_pub.publish(cloud);
 }
 
-void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped> pose_msgs, bool updated)
+void publish_ros_poseStamped(std::deque<geometry_msgs::PoseStamped> pose_msgs, bool & updated)
 {
     if(!interpolation)
     {
-        if(!pose_msgs.empty())
+        if(updated)
         {
+            updated = false;
             geometry_msgs::PoseStamped vision = pose_msgs.back();
+//    cout << "image: "<< (ros::Time::now() - vision.header.stamp).toSec() << endl;;
             vision.header.stamp += ros::Duration(delay);
-            pose_msgs.clear();
             pose_pub.publish(vision);
+            pose_msgs.clear();
         }
     }
     else
