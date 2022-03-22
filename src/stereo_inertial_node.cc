@@ -137,10 +137,10 @@ int main(int argc, char **argv)
         cv::initUndistortRectifyMap(K_r,D_r,R_r,P_r.rowRange(0,3).colRange(0,3),cv::Size(cols_r,rows_r),CV_32F,igb.M1r,igb.M2r);
     }
 
-    // Maximum delay, 5 seconds * 200Hz = 1000 samples
-    ros::Subscriber sub_imu = node_handler.subscribe("/imu", 1000, &ImuGrabber::GrabImu, &imugb); 
-    ros::Subscriber sub_img_left = node_handler.subscribe("/camera/left/image_raw", 100, &ImageGrabber::GrabImageLeft, &igb);
-    ros::Subscriber sub_img_right = node_handler.subscribe("/camera/right/image_raw", 100, &ImageGrabber::GrabImageRight, &igb);
+    // Maximum delay, 1 seconds * 400Hz = 400 samples
+    ros::Subscriber sub_imu = node_handler.subscribe("/imu", 400, &ImuGrabber::GrabImu, &imugb); 
+    ros::Subscriber sub_img_left = node_handler.subscribe("/camera/left/image_raw", 30, &ImageGrabber::GrabImageLeft, &igb);
+    ros::Subscriber sub_img_right = node_handler.subscribe("/camera/right/image_raw", 30, &ImageGrabber::GrabImageRight, &igb);
 
     pose_pub = node_handler.advertise<geometry_msgs::PoseStamped> ("/orb_slam3_ros/camera", 1);
     map_points_pub = node_handler.advertise<sensor_msgs::PointCloud2>("orb_slam3_ros/map_points", 1);
@@ -208,110 +208,108 @@ void ImageGrabber::SyncWithImu()
         double tImLeft = 0, tImRight = 0;
         if (!imgLeftBuf.empty()&&!imgRightBuf.empty()&&!mpImuGb->imuBuf.empty())
         {
-        tImLeft = imgLeftBuf.front()->header.stamp.toSec();
-        tImRight = imgRightBuf.front()->header.stamp.toSec();
-
-        this->mBufMutexRight.lock();
-        while((tImLeft-tImRight)>maxTimeDiff && imgRightBuf.size()>1)
-        {
-            imgRightBuf.pop();
-            tImRight = imgRightBuf.front()->header.stamp.toSec();
-        }
-        this->mBufMutexRight.unlock();
-
-        this->mBufMutexLeft.lock();
-        while((tImRight-tImLeft)>maxTimeDiff && imgLeftBuf.size()>1)
-        {
-            imgLeftBuf.pop();
             tImLeft = imgLeftBuf.front()->header.stamp.toSec();
-        }
-        this->mBufMutexLeft.unlock();
+            tImRight = imgRightBuf.front()->header.stamp.toSec();
 
-        if((tImLeft-tImRight)>maxTimeDiff || (tImRight-tImLeft)>maxTimeDiff)
-        {
-            // std::cout << "big time difference" << std::endl;
-            continue;
-        }
-        if(tImLeft>mpImuGb->imuBuf.back()->header.stamp.toSec())
-            continue;
-
-        this->mBufMutexLeft.lock();
-        imLeft = GetImage(imgLeftBuf.front());
-        ros::Time current_frame_time = imgLeftBuf.front()->header.stamp;
-        imgLeftBuf.pop();
-        this->mBufMutexLeft.unlock();
-
-        this->mBufMutexRight.lock();
-        imRight = GetImage(imgRightBuf.front());
-        imgRightBuf.pop();
-        this->mBufMutexRight.unlock();
-
-        vector<ORB_SLAM3::IMU::Point> vImuMeas;
-        mpImuGb->mBufMutex.lock();
-        if(!mpImuGb->imuBuf.empty())
-        {
-            // Load imu measurements from buffer
-            vImuMeas.clear();
-            while(!mpImuGb->imuBuf.empty() && mpImuGb->imuBuf.front()->header.stamp.toSec()<=tImLeft)
+            this->mBufMutexRight.lock();
+            while((tImLeft-tImRight)>maxTimeDiff && imgRightBuf.size()>1)
             {
-            double t = mpImuGb->imuBuf.front()->header.stamp.toSec();
-            cv::Point3f acc(mpImuGb->imuBuf.front()->linear_acceleration.x, mpImuGb->imuBuf.front()->linear_acceleration.y, mpImuGb->imuBuf.front()->linear_acceleration.z);
-            cv::Point3f gyr(mpImuGb->imuBuf.front()->angular_velocity.x, mpImuGb->imuBuf.front()->angular_velocity.y, mpImuGb->imuBuf.front()->angular_velocity.z);
-            vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc,gyr,t));
-            mpImuGb->imuBuf.pop();
+                imgRightBuf.pop();
+                tImRight = imgRightBuf.front()->header.stamp.toSec();
             }
-        }
-        mpImuGb->mBufMutex.unlock();
-        if(mbClahe)
-        {
-            mClahe->apply(imLeft,imLeft);
-            mClahe->apply(imRight,imRight);
-        }
+            this->mBufMutexRight.unlock();
 
-        if(do_rectify)
-        {
-            cv::remap(imLeft,imLeft,M1l,M2l,cv::INTER_LINEAR);
-            cv::remap(imRight,imRight,M1r,M2r,cv::INTER_LINEAR);
-        }
+            this->mBufMutexLeft.lock();
+            while((tImRight-tImLeft)>maxTimeDiff && imgLeftBuf.size()>1)
+            {
+                imgLeftBuf.pop();
+                tImLeft = imgLeftBuf.front()->header.stamp.toSec();
+            }
+            this->mBufMutexLeft.unlock();
+
+            if((tImLeft-tImRight)>maxTimeDiff || (tImRight-tImLeft)>maxTimeDiff)
+            {
+                // std::cout << "big time difference" << std::endl;
+                continue;
+            }
+            if(tImLeft>mpImuGb->imuBuf.back()->header.stamp.toSec())
+                continue;
+
+            this->mBufMutexLeft.lock();
+            imLeft = GetImage(imgLeftBuf.front());
+            ros::Time current_frame_time = imgLeftBuf.front()->header.stamp;
+            imgLeftBuf.pop();
+            this->mBufMutexLeft.unlock();
+
+            this->mBufMutexRight.lock();
+            imRight = GetImage(imgRightBuf.front());
+            imgRightBuf.pop();
+            this->mBufMutexRight.unlock();
+
+            vector<ORB_SLAM3::IMU::Point> vImuMeas;
+            mpImuGb->mBufMutex.lock();
+            if(!mpImuGb->imuBuf.empty())
+            {
+                // Load imu measurements from buffer
+                vImuMeas.clear();
+                while(!mpImuGb->imuBuf.empty() && mpImuGb->imuBuf.front()->header.stamp.toSec()<=tImLeft)
+                {
+                    double t = mpImuGb->imuBuf.front()->header.stamp.toSec();
+                    cv::Point3f acc(mpImuGb->imuBuf.front()->linear_acceleration.x, mpImuGb->imuBuf.front()->linear_acceleration.y, mpImuGb->imuBuf.front()->linear_acceleration.z);
+                    cv::Point3f gyr(mpImuGb->imuBuf.front()->angular_velocity.x, mpImuGb->imuBuf.front()->angular_velocity.y, mpImuGb->imuBuf.front()->angular_velocity.z);
+                    vImuMeas.push_back(ORB_SLAM3::IMU::Point(acc,gyr,t));
+                    mpImuGb->imuBuf.pop();
+                }
+            }
+            mpImuGb->mBufMutex.unlock();
+            if(mbClahe)
+            {
+                mClahe->apply(imLeft,imLeft);
+                mClahe->apply(imRight,imRight);
+            }
+
+            if(do_rectify)
+            {
+                cv::remap(imLeft,imLeft,M1l,M2l,cv::INTER_LINEAR);
+                cv::remap(imRight,imRight,M1r,M2r,cv::INTER_LINEAR);
+            }
         
-        // Main algorithm runs here
-        cv::Mat Tcw;
-        Sophus::SE3f Tcw_SE3f = mpSLAM->TrackStereo(imLeft,imRight,tImLeft,vImuMeas);
-        Eigen::Matrix4f Tcw_Matrix = Tcw_SE3f.matrix();
-        cv::eigen2cv(Tcw_Matrix, Tcw);
-    //    cv::Mat Tcw = mpSLAM->TrackStereo(imLeft,imRight,tImLeft,vImuMeas);
+            // Main algorithm runs here
+            cv::Mat Tcw;
+            Sophus::SE3f Tcw_SE3f = mpSLAM->TrackStereo(imLeft,imRight,tImLeft,vImuMeas);
+            Eigen::Matrix4f Tcw_Matrix = Tcw_SE3f.matrix();
+            cv::eigen2cv(Tcw_Matrix, Tcw);
 
-        if (!Tcw.empty())
-        {
-            tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
-
-            if(whether_publish_tf_transform) 
+            if (!Tcw.empty())
             {
-                static tf::TransformBroadcaster tf_broadcaster;
-                tf_broadcaster.sendTransform(tf::StampedTransform(tf_transform, current_frame_time, map_frame_id, pose_frame_id));
+                tf::Transform tf_transform = from_orb_to_ros_tf_transform (Tcw);
+
+                if(whether_publish_tf_transform) 
+                {
+                    static tf::TransformBroadcaster tf_broadcaster;
+                    tf_broadcaster.sendTransform(tf::StampedTransform(tf_transform, current_frame_time, map_frame_id, pose_frame_id));
+                }
+
+                tf::Stamped<tf::Pose> grasp_tf_pose(tf_transform, current_frame_time, map_frame_id);
+
+                geometry_msgs::PoseStamped pose_msg;
+
+                tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
+
+                this->mBufMutexPose.lock();
+                pose_msgs.push_back(pose_msg);
+                while(pose_msgs.size() > interpolation_sample_num)
+                {
+                    pose_msgs.pop_front();
+                }
+                updated = true;
+                this->mBufMutexPose.unlock();
+                // pose_pub.publish(pose_msg);
             }
 
-            tf::Stamped<tf::Pose> grasp_tf_pose(tf_transform, current_frame_time, map_frame_id);
+            publish_ros_tracking_mappoints(mpSLAM->GetTrackedMapPoints(), current_frame_time);
 
-            geometry_msgs::PoseStamped pose_msg;
-
-            tf::poseStampedTFToMsg(grasp_tf_pose, pose_msg);
-
-            this->mBufMutexPose.lock();
-            pose_msgs.push_back(pose_msg);
-            while(pose_msgs.size() > interpolation_sample_num)
-            {
-                pose_msgs.pop_front();
-            }
-            updated = true;
-            this->mBufMutexPose.unlock();
-            // pose_pub.publish(pose_msg);
-        }
-
-       publish_ros_tracking_mappoints(mpSLAM->GetTrackedMapPoints(), current_frame_time);
-
-        std::chrono::milliseconds tSleep(1);
-        std::this_thread::sleep_for(tSleep);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 }
