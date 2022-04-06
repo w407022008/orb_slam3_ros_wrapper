@@ -31,8 +31,9 @@ public:
     void SyncWithImu();
     void publish();
 
-    queue<sensor_msgs::ImageConstPtr> imgLeftBuf, imgRightBuf;
-    std::mutex mBufMutexLeft,mBufMutexRight;
+    bool ImageLeftReady, ImageRightReady = false;
+    long int ImageLeftStampNsec, ImageRightStampNsec;
+    sensor_msgs::ImageConstPtr imgLeftPtr, imgRightPtr;
    
     ORB_SLAM3::System* mpSLAM;
     ImuGrabber *mpImuGb;
@@ -138,9 +139,9 @@ int main(int argc, char **argv)
     }
 
     // Maximum delay, 1 seconds * 400Hz = 400 samples
-    ros::Subscriber sub_imu = node_handler.subscribe("/imu", 400, &ImuGrabber::GrabImu, &imugb); 
-    ros::Subscriber sub_img_left = node_handler.subscribe("/camera/left/image_raw", 30, &ImageGrabber::GrabImageLeft, &igb);
-    ros::Subscriber sub_img_right = node_handler.subscribe("/camera/right/image_raw", 30, &ImageGrabber::GrabImageRight, &igb);
+    ros::Subscriber sub_imu = node_handler.subscribe("/imu", 100, &ImuGrabber::GrabImu, &imugb); 
+    ros::Subscriber sub_img_left = node_handler.subscribe("/camera/left/image_raw", 2, &ImageGrabber::GrabImageLeft, &igb);
+    ros::Subscriber sub_img_right = node_handler.subscribe("/camera/right/image_raw", 2, &ImageGrabber::GrabImageRight, &igb);
 
     pose_pub = node_handler.advertise<geometry_msgs::PoseStamped> ("/orb_slam3_ros/camera", 1);
     map_points_pub = node_handler.advertise<sensor_msgs::PointCloud2>("orb_slam3_ros/map_points", 1);
@@ -159,20 +160,17 @@ int main(int argc, char **argv)
 
 void ImageGrabber::GrabImageLeft(const sensor_msgs::ImageConstPtr &img_msg)
 {
-    mBufMutexLeft.lock();
-    if (!imgLeftBuf.empty())
-        imgLeftBuf.pop();
-    imgLeftBuf.push(img_msg);
-    mBufMutexLeft.unlock();
+    imgLeftPtr = img_msg;
+    ImageLeftReady = true;
+    ImageLeftStampNsec = img_msg->header.stamp.nsec;
+    //std::cout << "left: " << img_msg->header.stamp.nsec << std::endl;
 }
 
 void ImageGrabber::GrabImageRight(const sensor_msgs::ImageConstPtr &img_msg)
 {
-    mBufMutexRight.lock();
-    if (!imgRightBuf.empty())
-        imgRightBuf.pop();
-    imgRightBuf.push(img_msg);
-    mBufMutexRight.unlock();
+    imgRightPtr = img_msg;
+    ImageRightReady = true;
+    ImageRightStampNsec = img_msg->header.stamp.nsec;
 }
 
 cv::Mat ImageGrabber::GetImage(const sensor_msgs::ImageConstPtr &img_msg)
@@ -201,50 +199,26 @@ cv::Mat ImageGrabber::GetImage(const sensor_msgs::ImageConstPtr &img_msg)
 
 void ImageGrabber::SyncWithImu()
 {
-    const double maxTimeDiff = 0.01;
     while(1)
     {
         cv::Mat imLeft, imRight;
-        double tImLeft = 0, tImRight = 0;
-        if (!imgLeftBuf.empty()&&!imgRightBuf.empty()&&!mpImuGb->imuBuf.empty())
+        if (ImageLeftReady && ImageRightReady && ImageLeftStampNsec==ImageRightStampNsec && !mpImuGb->imuBuf.empty())
         {
-            tImLeft = imgLeftBuf.front()->header.stamp.toSec();
-            tImRight = imgRightBuf.front()->header.stamp.toSec();
+            ImageLeftReady = false;
+            ImageRightReady = false;
+            ros::Time current_frame_time = imgLeftPtr->header.stamp;
+            double tImLeft = current_frame_time.toSec();
+            double tImRight = imgRightPtr->header.stamp.toSec();
 
-            this->mBufMutexRight.lock();
-            while((tImLeft-tImRight)>maxTimeDiff && imgRightBuf.size()>1)
-            {
-                imgRightBuf.pop();
-                tImRight = imgRightBuf.front()->header.stamp.toSec();
-            }
-            this->mBufMutexRight.unlock();
-
-            this->mBufMutexLeft.lock();
-            while((tImRight-tImLeft)>maxTimeDiff && imgLeftBuf.size()>1)
-            {
-                imgLeftBuf.pop();
-                tImLeft = imgLeftBuf.front()->header.stamp.toSec();
-            }
-            this->mBufMutexLeft.unlock();
-
-            if((tImLeft-tImRight)>maxTimeDiff || (tImRight-tImLeft)>maxTimeDiff)
-            {
-                // std::cout << "big time difference" << std::endl;
-                continue;
-            }
             if(tImLeft>mpImuGb->imuBuf.back()->header.stamp.toSec())
+            {
                 continue;
+            }
 
-            this->mBufMutexLeft.lock();
-            imLeft = GetImage(imgLeftBuf.front());
-            ros::Time current_frame_time = imgLeftBuf.front()->header.stamp;
-            imgLeftBuf.pop();
-            this->mBufMutexLeft.unlock();
+            imLeft = GetImage(imgLeftPtr);
+            imRight = GetImage(imgRightPtr);
+            //std::cout << "used: " << current_frame_time.nsec << std::endl;
 
-            this->mBufMutexRight.lock();
-            imRight = GetImage(imgRightBuf.front());
-            imgRightBuf.pop();
-            this->mBufMutexRight.unlock();
 
             vector<ORB_SLAM3::IMU::Point> vImuMeas;
             mpImuGb->mBufMutex.lock();
