@@ -43,78 +43,23 @@ Tbc: !!opencv-matrix
           0.0, 0.0, 0.0, 1.0]
 
 # IMU noise
-IMU.NoiseGyro: 2.3112893833457612e-03 # 1.6968e-04 
-IMU.NoiseAcc: 1.9272590412586301e-02 # 2.0000e-3
-IMU.GyroWalk: 4.3741065210145274e-05 
-IMU.AccWalk: 1.0008115506205139e-03 # 3.0000e-3
+IMU.NoiseGyro: 2.3112893833457612e-02 # 1.6968e-04 
+IMU.NoiseAcc: 2.9272590412586301e-00 # 2.0000e-3
+IMU.GyroWalk: 4.3741065210145274e-03 
+IMU.AccWalk: 1.0008115506205139e-01 # 3.0000e-3
 IMU.Frequency: 400 # when gyro=400 & accel=250, otherwise 200 when gyro=-1 accel=-1
-
-#--------------------------------------------------------------------------------------------
-# Stereo Rectification. Only if you need to pre-rectify the images.
-# Camera.fx, .fy, etc must be the same as in LEFT.P
-#--------------------------------------------------------------------------------------------
-LEFT.height: 480
-LEFT.width: 640
-LEFT.D: !!opencv-matrix
-   rows: 1
-   cols: 5
-   dt: d
-   data: [0.0, 0.0, 0.0, 0.0, 0.0]
-LEFT.K: !!opencv-matrix
-   rows: 3
-   cols: 3
-   dt: d
-   data: [384.56298828125, 0.0, 323.52008056640625, 0.0, 384.56298828125, 242.16571044921875, 0.0, 0.0, 1.0]
-LEFT.R:  !!opencv-matrix
-   rows: 3
-   cols: 3
-   dt: d
-   data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-LEFT.Rf:  !!opencv-matrix
-   rows: 3
-   cols: 3
-   dt: f
-   data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-LEFT.P:  !!opencv-matrix
-   rows: 3
-   cols: 4
-   dt: d
-   data: [384.56298828125, 0.0, 323.52008056640625, 0.0, 0.0, 384.56298828125, 242.16571044921875, 0.0, 0.0, 0.0, 1.0, 0.0]
-
-RIGHT.height: 480
-RIGHT.width: 640
-RIGHT.D: !!opencv-matrix
-   rows: 1
-   cols: 5
-   dt: d
-   data: [0.0, 0.0, 0.0, 0.0, 0.0]
-RIGHT.K: !!opencv-matrix
-   rows: 3
-   cols: 3
-   dt: d
-   data: [384.56298828125, 0.0, 323.52008056640625, 0.0, 384.56298828125, 242.16571044921875, 0.0, 0.0, 1.0]
-RIGHT.R:  !!opencv-matrix
-   rows: 3
-   cols: 3
-   dt: d
-   data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-RIGHT.P:  !!opencv-matrix
-   rows: 3
-   cols: 4
-   dt: d
-   data: [384.56298828125, 0.0, 323.52008056640625, 19.241151809692383, 0.0, 384.56298828125, 242.16571044921875, 0.0, 0.0, 0.0, 1.0, 0.0]
 
 #--------------------------------------------------------------------------------------------
 # System Parameters
 #--------------------------------------------------------------------------------------------
-System.LoopClosing : 0
+System.LoopClosing : 1
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1250
+ORBextractor.nFeatures: 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2
